@@ -4,34 +4,30 @@
 基于zookeeper实现的分布式定时任务程序。
 
 #### 软件架构
-软件架构说明
+包含：
 
+1.zookeeper
 
-#### 安装教程
+2.quartz
 
-1. xxxx
-2. xxxx
-3. xxxx
+3.curator
+
+4.httpclient
+
+5.springboot
+
 
 #### 使用说明
+当前程序只完成了分布的分配与注册定时任务的获取，定时任务只能写在Java类中继承Job接口
 
-1. xxxx
-2. xxxx
-3. xxxx
+剩余需要完成项：
 
-#### 参与贡献
+1.定义多种可执行的定时任务：shell脚本、数据库操作
 
-1. Fork 本仓库
-2. 新建 Feat_xxx 分支
-3. 提交代码
-4. 新建 Pull Request
+2.zookeeper的连接配置后续支持：xml格式解析、properties格式解析
 
+3.将HTTPCLIENT调用修改为rpc调用，引入netty（或者将分发改为rabbitmq的订阅模式，worker自己获取定时任务）
 
-#### 码云特技
+4.增加告警提醒：短信提醒、邮件提醒
 
-1. 使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2. 码云官方博客 [blog.gitee.com](https://blog.gitee.com)
-3. 你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解码云上的优秀开源项目
-4. [GVP](https://gitee.com/gvp) 全称是码云最有价值开源项目，是码云综合评定出的优秀开源项目
-5. 码云官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6. 码云封面人物是一档用来展示码云会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+5.保存已经分配的定时任务，防止在后续master服务宕机或者异常，新的master不需要再次分配定时任务
