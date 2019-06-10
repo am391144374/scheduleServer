@@ -21,9 +21,9 @@ public class httpUtil {
      * @param methodPath
      */
     public static void sendSchedul(String address,String methodPath, ScheduleBean scheduleBean){
-        String data = JSONObject.toJSONString(scheduleBean);
         HttpClient client = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet("http://"+address + methodPath + "?data="+data);
+        //传输ScheduleName
+        HttpGet httpGet = new HttpGet("http://"+address + methodPath + "?data="+scheduleBean.getScheduleName());
         try {
             HttpResponse httpResponse = client.execute(httpGet);
             if(httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK){

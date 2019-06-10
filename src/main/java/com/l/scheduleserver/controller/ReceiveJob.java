@@ -1,7 +1,6 @@
 package com.l.scheduleserver.controller;
 
 
-import com.alibaba.fastjson.JSONObject;
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
 import com.l.scheduleserver.quartz.QuartzExcutors;
@@ -26,13 +25,16 @@ public class ReceiveJob {
      */
     @GetMapping(METHODPATH)
     public void receiveMessage(@RequestParam("data")String data){
-        ScheduleBean scheduleBean = JSONObject.parseObject(data,ScheduleBean.class);
-        log.info("新增任务---{}",scheduleBean.toString());
-        WorkerServiceInfo.putWork(scheduleBean);
-        try {
-            QuartzExcutors.getInstance().addJobFromId(scheduleBean);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
+        log.info("新增任务---{}",data);
+        ScheduleBean scheduleBean = WorkerServiceInfo.getWork(data);
+        if(scheduleBean != null){
+            try {
+                QuartzExcutors.getInstance().addJobFromId(scheduleBean);
+            } catch (SchedulerException e) {
+                e.printStackTrace();
+            }
+        }else{
+            log.warn(data+",未找到对应的定时任务");
         }
     }
 

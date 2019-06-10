@@ -38,31 +38,6 @@ public class SelectLeader implements LeaderLatchListener {
         this.curatorFramework = curatorFramework;
     }
 
-//    /**
-//     * 开始竞选
-//     */
-//    public void start(){
-//        leaderSelector.start();
-//    }
-//
-//    /**
-//     * 关闭
-//     */
-//    @Override
-//    public void close(){
-//        leaderSelector.close();
-//    }
-
-    /**
-     * 获取master，处理方法
-     * @param
-     * @throws Exception
-     */
-//    @Override
-//    public void takeLeadership(CuratorFramework curatorFramework) throws Exception {
-//
-//    }
-
     @Override
     public void isLeader() {
         log.info("当前{}成为leader",name);
@@ -73,7 +48,7 @@ public class SelectLeader implements LeaderLatchListener {
             if(curatorFramework.checkExists().forPath(MasterPath) == null){
                 //先从worker删除，再创建一个临时的master节点
                 curatorFramework.delete().forPath(WorkerPath);
-//                curatorFramework.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(MasterPath,data.getBytes());
+                curatorFramework.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(MasterPath,data.getBytes());
             }
             log.info("初始化分发定时任务开始！");
             //进行定时任务的分派
@@ -85,13 +60,6 @@ public class SelectLeader implements LeaderLatchListener {
                 Thread.sleep(10000);
                 childDatas = WorkerServiceInfo.serverInfo;
             }
-//            for(String path:childPath){
-//                byte[] childDataByte = curatorFramework.getData().forPath(path);
-//                String childData = new String(childDataByte);
-//                childDatas.add(childData);
-//                //本地保存server信息
-//
-//            }
 
             /**
              * 理论上定时任务应该是从数据库中查询出来，则在获取master的时候就会初始化所有的定时任务

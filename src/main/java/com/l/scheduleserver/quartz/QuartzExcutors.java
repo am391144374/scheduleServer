@@ -15,7 +15,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 @Slf4j
 public class QuartzExcutors {
 
-    private static volatile QuartzExcutors quartzExcutors;
+    private static QuartzExcutors quartzExcutors;
 
     private QuartzExcutors(){}
 
@@ -115,6 +115,7 @@ public class QuartzExcutors {
         }
     }
 
+    //更新定时任务，未实现调用
     public void updateJobFromId(ScheduleBean scheduleBean)throws RuntimeException{
         //判断job是否存在
         int scheduleId = scheduleBean.getScheduleId();

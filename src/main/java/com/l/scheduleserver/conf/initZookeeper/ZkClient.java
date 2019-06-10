@@ -67,7 +67,7 @@ public class ZkClient {
         initServicListeren();
         //竞选master
         selectMaster();
-        //注册获取worker信息的心跳
+        //注册获取worker信息的定时任务
         setHeartBeatToGetInfo();
         //注册监听节点
         regiestNodePath();

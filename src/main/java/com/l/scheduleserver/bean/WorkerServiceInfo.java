@@ -36,6 +36,13 @@ public class WorkerServiceInfo {
         return stringBuffer.toString();
     }
 
+    public static ScheduleBean getWork(String scheduleName){
+        if(scheduleName != null){
+            return workerSchedule.get(scheduleName);
+        }
+        return null;
+    }
+
     public static void removeServer(String serverData){
         serverInfo.remove(serverData);
     }
