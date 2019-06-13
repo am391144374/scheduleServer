@@ -17,7 +17,7 @@
 5.springboot
 
 #### 描述
-1.是同curator内置的选举类来操作选举master。
+1.是通过curator内置的选举类来操作选举master。
 
 2.master不会处理定时任务，所以至少部署两台服务。
 
