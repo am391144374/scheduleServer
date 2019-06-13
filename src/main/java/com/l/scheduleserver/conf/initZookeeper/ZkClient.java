@@ -14,6 +14,8 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.zookeeper.CreateMode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
@@ -29,14 +31,13 @@ import static com.l.scheduleserver.enums.container.*;
 
 @Slf4j
 @Component
-public class ZkClient {
+public class ZkClient implements ApplicationRunner {
 
     private CuratorFramework curatorFramework ;
     private AbstractInitParam abstractInitParam;
     private AtomicInteger atomicInteger = new AtomicInteger();
-    public ZkClient(){
-        init();
-    }
+    @Autowired
+    private serverUtil serverUtil;
 
     /**
      * 初始化连接
@@ -76,7 +77,6 @@ public class ZkClient {
      */
     public void start(){
         try {
-//            curatorFramework.getZookeeperClient().start();
             curatorFramework.start();
             log.info("start zookeeper connection success!");
         } catch (Exception e) {
@@ -196,7 +196,7 @@ public class ZkClient {
     private void selectMaster(){
         log.info("start run for the master");
         LeaderLatch leaderLatch = new LeaderLatch(curatorFramework, ZK_MASTER_PATH, "client#");
-        SelectLeader selectLeader = new SelectLeader(serverUtil.getApplicationName(),ZK_MASTER_PATH,curatorFramework,serverUtil.getHost());
+        SelectLeader selectLeader = new SelectLeader(serverUtil.getApplicationName(),ZK_MASTER_PATH,curatorFramework);
         leaderLatch.addListener(selectLeader);
         try {
             leaderLatch.start();
@@ -274,4 +274,8 @@ public class ZkClient {
         scheduleInit.scanPacketToGetScheduleBean();
     }
 
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        init();
+    }
 }

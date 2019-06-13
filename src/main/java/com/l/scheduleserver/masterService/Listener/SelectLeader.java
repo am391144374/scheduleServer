@@ -2,18 +2,16 @@ package com.l.scheduleserver.masterService.Listener;
 
 
 import com.l.scheduleserver.bean.ScheduleBean;
+import com.l.scheduleserver.bean.SchedulerList;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
+import com.l.scheduleserver.quartz.QuartzExcutors;
 import com.l.scheduleserver.util.ThreadUtils;
 import com.l.scheduleserver.util.httpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
-import org.apache.curator.framework.recipes.leader.LeaderSelector;
-import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
-import org.apache.zookeeper.CreateMode;
+import org.quartz.Scheduler;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,16 +28,14 @@ import static com.l.scheduleserver.enums.container.*;
 public class SelectLeader implements LeaderLatchListener {
 
     private final String name;
-//    private final LeaderSelector leaderSelector;
     private final CuratorFramework curatorFramework;
-    private String hostName;
+    private final String masterPath;
 
-    public SelectLeader(String name, String path, CuratorFramework curatorFramework,String hostName){
+    public SelectLeader(String name, String path, CuratorFramework curatorFramework){
         this.name = name;
-        this.hostName = hostName;
+        this.masterPath = path;
         //选举master
         this.curatorFramework = curatorFramework;
-        setHeartBeatToGetInfo();
     }
 
     /**
@@ -54,18 +50,18 @@ public class SelectLeader implements LeaderLatchListener {
     @Override
     public void isLeader() {
         log.info("当前{}成为leader",name);
+        setHeartBeatToGetInfo();
         try{
-            String MasterPath = ZK_MASTER_PATH + "/" + name;
+            String MasterPath = masterPath + "/" + name;
             String WorkerPath = ZK_WORKER_PATH + "/" + name;
-            String data = name + WHIPPLETREE + hostName;
-            if(curatorFramework.checkExists().forPath(MasterPath) == null){
-                //先从worker删除，再创建一个临时的master节点
+//            String data = name + WHIPPLETREE + hostName;
+            //如果从worker晋升为leader则删除定时任务和清空worker保存的worker数量，等待重新分配
+            if(curatorFramework.checkExists().forPath(WorkerPath) != null){
+                isLeaderThenDeleteWorkerInfo();
+                //从worker删除
                 curatorFramework.delete().forPath(WorkerPath);
-                curatorFramework.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(MasterPath,data.getBytes());
             }
             log.info("初始化分发定时任务开始！");
-            //进行定时任务的分派
-//            List<String> childPath =  curatorFramework.getChildren().forPath(ZK_WORKER_PATH);
             List<String> childDatas = WorkerServiceInfo.serverInfo;
             while(childDatas.size() < 1){
                 log.info("master没有获取到worker，等待10秒后再次获取！");
@@ -121,5 +117,15 @@ public class SelectLeader implements LeaderLatchListener {
     @Override
     public void notLeader() {
         log.info("当前{}未成为master",name);
+    }
+
+    public void isLeaderThenDeleteWorkerInfo(){
+        if(SchedulerList.getSize() > 0){
+            List<Scheduler> schedulerList = SchedulerList.getAllScheduler();
+            for(Scheduler scheduler : schedulerList){
+                QuartzExcutors.stop(scheduler);
+            }
+        }
+        WorkerServiceInfo.serverInfo.clear();
     }
 }

@@ -50,7 +50,7 @@ public class QuartzExcutors {
      * 关闭任务
      * @throws SchedulerException
      */
-    public void stop(Scheduler scheduler){
+    public static void stop(Scheduler scheduler){
         try {
             if(!scheduler.isShutdown()){
                 scheduler.shutdown();

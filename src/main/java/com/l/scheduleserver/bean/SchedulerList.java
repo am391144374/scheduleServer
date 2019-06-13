@@ -2,6 +2,9 @@ package com.l.scheduleserver.bean;
 
 import org.quartz.Scheduler;
 
+import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,5 +35,23 @@ public class SchedulerList {
             return false;
         }
         return schedulerWorkList.remove(id,scheduler);
+    }
+
+    public static int getSize(){
+        return schedulerWorkList.size();
+    }
+
+    public static List<Scheduler> getAllScheduler(){
+        if(schedulerWorkList.size() > 0){
+            List<Scheduler> schedulerList = new LinkedList<>();
+            Enumeration<Integer> keys = schedulerWorkList.keys();
+            while(keys.hasMoreElements()){
+                Integer key = keys.nextElement();
+                schedulerList.add(schedulerWorkList.get(key));
+            }
+            return schedulerList;
+        }else{
+            return null;
+        }
     }
 }
