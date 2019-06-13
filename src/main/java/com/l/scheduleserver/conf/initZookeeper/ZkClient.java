@@ -21,9 +21,7 @@ import java.io.File;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.l.scheduleserver.enums.container.*;
@@ -65,10 +63,10 @@ public class ZkClient {
         registerService();
         //初始化service数据
         initServicListeren();
+        //初始化定时任务
+        initScheduleWork();
         //竞选master
         selectMaster();
-        //注册获取worker信息的定时任务
-        setHeartBeatToGetInfo();
         //注册监听节点
         regiestNodePath();
     }
@@ -208,15 +206,6 @@ public class ZkClient {
 //        selectLeader.start();
     }
 
-    /**
-     * 注册获取worker信息
-     */
-    private void setHeartBeatToGetInfo(){
-        ScheduledExecutorService scheduledExecutorService = ThreadUtils.getScheduledExecutorService(GET_SERVERINFO_HEARTBEAT_NAME,GET_SERVERINFO_POOLSIZE);
-        scheduledExecutorService.scheduleAtFixedRate(new GetServiceInfoListener(curatorFramework),2,GET_SERVERINFO_TIME, TimeUnit.SECONDS);
-        log.info("注册获取信息监听程序成功");
-    }
-
     //程序初始化错误，直接停止程序
     private void shutdownNow(){
         log.error("初始化错误，退出程序！");
@@ -278,6 +267,11 @@ public class ZkClient {
             shutdownNow();
             e.printStackTrace();
         }
+    }
+
+    private void initScheduleWork(){
+        ScheduleInit scheduleInit = new ScheduleInit();
+        scheduleInit.scanPacketToGetScheduleBean();
     }
 
 }

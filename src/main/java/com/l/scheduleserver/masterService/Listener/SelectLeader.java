@@ -3,6 +3,7 @@ package com.l.scheduleserver.masterService.Listener;
 
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
+import com.l.scheduleserver.util.ThreadUtils;
 import com.l.scheduleserver.util.httpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
@@ -16,6 +17,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.l.scheduleserver.enums.container.*;
 
@@ -36,6 +39,16 @@ public class SelectLeader implements LeaderLatchListener {
         this.hostName = hostName;
         //选举master
         this.curatorFramework = curatorFramework;
+        setHeartBeatToGetInfo();
+    }
+
+    /**
+     * 注册获取worker信息
+     */
+    private void setHeartBeatToGetInfo(){
+        ScheduledExecutorService scheduledExecutorService = ThreadUtils.getScheduledExecutorService(GET_SERVERINFO_HEARTBEAT_NAME,GET_SERVERINFO_POOLSIZE);
+        scheduledExecutorService.scheduleAtFixedRate(new GetServiceInfoListener(curatorFramework),2,GET_SERVERINFO_TIME, TimeUnit.SECONDS);
+        log.info("注册获取信息监听程序成功");
     }
 
     @Override

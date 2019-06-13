@@ -1,9 +1,8 @@
-package com.l.scheduleserver.testData;
+package com.l.scheduleserver.exampleScheduleBean;
 
 import com.l.scheduleserver.bean.ScheduleBean;
-import com.l.scheduleserver.bean.WorkerServiceInfo;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import com.l.scheduleserver.conf.annotation.Schedule;
+import com.l.scheduleserver.conf.annotation.ScheduleGetBeanFromMethod;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -11,11 +10,11 @@ import java.util.Date;
 /**
  * 测试数据
  */
-@Component
+@Schedule
 public class testScheduleBean {
 
-    @Bean
-    public void getScheduleBean(){
+    @ScheduleGetBeanFromMethod
+    public ScheduleBean getScheduleBean(){
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.add(Calendar.MONTH,3);
@@ -23,7 +22,7 @@ public class testScheduleBean {
         scheduleBean.setCreateTime(new Date());
         scheduleBean.setCreateUserId("liushijie");
         scheduleBean.setCreateUserName("ROOT");
-        scheduleBean.setCron("* 1 * * * ?");
+        scheduleBean.setCron("*/1 * * * * ?");
         scheduleBean.setDesc("测试的定时任务");
         scheduleBean.setEndTime(calendar.getTime());
         scheduleBean.setRunJob(new scheduleData());
@@ -31,7 +30,7 @@ public class testScheduleBean {
         scheduleBean.setScheduleName("测试1");
         scheduleBean.setStartTime(new Date());
         scheduleBean.setVersion("1");
-        WorkerServiceInfo.putWork(scheduleBean);
+        return scheduleBean;
     }
 
 }

@@ -76,6 +76,7 @@ public class QuartzExcutors {
             JobDetail jobDetail = JobBuilder.newJob(scheduleBean.getRunJob().getClass())
                     .setJobData(jobDataMap)
                     .withIdentity(jobKey)
+                    .storeDurably()
                     .build();
             scheduler.addJob(jobDetail,true);
 

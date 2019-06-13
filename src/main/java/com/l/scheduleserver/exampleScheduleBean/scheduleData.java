@@ -1,4 +1,4 @@
-package com.l.scheduleserver.testData;
+package com.l.scheduleserver.exampleScheduleBean;
 
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
