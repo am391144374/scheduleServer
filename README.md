@@ -18,11 +18,14 @@
 
 #### 描述
 1.是同curator内置的选举类来操作选举master。
+
 2.master不会处理定时任务，所以至少部署两台服务。
+
 3.master在成为leader时会传输定时名字来分配任务。
 
 #### 使用
 1.配置zookeeper的连接地址（目前写死在AbstractInitParam类中）。
+
 2.编写定时任务，需要使用注解@Schedule标注类，@ScheduleGetBeanFromMethod标注Bean方法，具体请查看com.l.scheduleserver.exampleScheduleBean包下的例子。
 
 #### 使用说明
