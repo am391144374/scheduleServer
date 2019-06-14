@@ -1,6 +1,6 @@
 package com.l.scheduleserver.bean;
 
-import com.l.scheduleserver.ScheduleService.FailFactory;
+import com.l.scheduleserver.conf.FailFactory;
 import com.sun.istack.internal.NotNull;
 import lombok.Getter;
 import lombok.Setter;

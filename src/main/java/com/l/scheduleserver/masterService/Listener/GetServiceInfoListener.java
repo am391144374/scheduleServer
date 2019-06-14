@@ -27,7 +27,6 @@ public class GetServiceInfoListener implements Runnable{
         WorkerServiceInfo.serverInfo.clear();
 
         try {
-//            Object[] serviceInfos = curatorFramework.getChildren().forPath(SPRITE + ZK_WORKER_PATH + SPRITE).toArray();
             List<String> serviceInfos =  curatorFramework.getChildren().forPath(ZK_WORKER_PATH);
             for (String ob : serviceInfos){
                 byte[] data = curatorFramework.getData().forPath(ZK_WORKER_PATH +SPRITE + ob);

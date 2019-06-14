@@ -73,6 +73,7 @@ public class QuartzExcutors {
         if(!scheduler.checkExists(jobKey)){
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put("desc",scheduleBean.getDesc());
+            jobDataMap.put("fail",scheduleBean.getFailFactory());
             JobDetail jobDetail = JobBuilder.newJob(scheduleBean.getRunJob().getClass())
                     .setJobData(jobDataMap)
                     .withIdentity(jobKey)

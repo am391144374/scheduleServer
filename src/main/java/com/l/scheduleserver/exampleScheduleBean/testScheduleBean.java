@@ -1,5 +1,6 @@
 package com.l.scheduleserver.exampleScheduleBean;
 
+import com.l.scheduleserver.conf.DefaultFail;
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.conf.annotation.Schedule;
 import com.l.scheduleserver.conf.annotation.ScheduleGetBeanFromMethod;
@@ -30,6 +31,7 @@ public class testScheduleBean {
         scheduleBean.setScheduleName("测试1");
         scheduleBean.setStartTime(new Date());
         scheduleBean.setVersion("1");
+        scheduleBean.setFailFactory(new DefaultFail());
         return scheduleBean;
     }
 

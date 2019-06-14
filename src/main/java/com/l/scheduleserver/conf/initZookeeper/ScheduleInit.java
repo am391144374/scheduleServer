@@ -4,6 +4,7 @@ import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
 import com.l.scheduleserver.conf.annotation.Schedule;
 import com.l.scheduleserver.conf.annotation.ScheduleGetBeanFromMethod;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,12 +16,14 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
+@Slf4j
 public class ScheduleInit {
 
     private String Path = "com.l.scheduleserver";
     private Set<String> scheduleClassPath = new HashSet<>();
 
     public void scanPacketToGetScheduleBean(){
+        log.info("扫描添加定时任务开始！");
         try {
             String packagePath = Path.replace(".", File.separator);
             Enumeration<URL> dirs = Thread.currentThread().getContextClassLoader().getResources(packagePath);
@@ -72,16 +75,17 @@ public class ScheduleInit {
                     continue;
                 }
                 ScheduleBean scheduleBean = (ScheduleBean) method.invoke(schClass.newInstance());
+                log.info("扫描----添加定时任务：{}",scheduleBean.getScheduleName());
                 WorkerServiceInfo.putWork(scheduleBean);
             }
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            log.error("ClassNotFoundException----",e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            log.error("IllegalAccessException----",e);
         } catch (InstantiationException e) {
-            e.printStackTrace();
+            log.error("InstantiationException----",e);
         } catch (InvocationTargetException e) {
-            e.printStackTrace();
+            log.error("InvocationTargetException----",e);
         }
     }
 
