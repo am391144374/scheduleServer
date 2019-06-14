@@ -1,7 +1,6 @@
-package com.l.scheduleserver.ScheduleService;
+package com.l.scheduleserver.services.quartzService;
 
 import com.l.scheduleserver.bean.ScheduleBean;
-import com.l.scheduleserver.quartz.QuartzExcutors;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;

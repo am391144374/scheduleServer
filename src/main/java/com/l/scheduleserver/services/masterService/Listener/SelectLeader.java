@@ -1,10 +1,11 @@
-package com.l.scheduleserver.masterService.Listener;
+package com.l.scheduleserver.services.masterService.Listener;
 
 
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.SchedulerList;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
-import com.l.scheduleserver.quartz.QuartzExcutors;
+import com.l.scheduleserver.services.dao.ScheduleDao;
+import com.l.scheduleserver.services.quartzService.QuartzExcutors;
 import com.l.scheduleserver.util.ThreadUtils;
 import com.l.scheduleserver.util.httpUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -30,10 +31,12 @@ public class SelectLeader implements LeaderLatchListener {
     private final String name;
     private final CuratorFramework curatorFramework;
     private final String masterPath;
+    private ScheduleDao scheduleDao;
 
-    public SelectLeader(String name, String path, CuratorFramework curatorFramework){
+    public SelectLeader(String name, String path, CuratorFramework curatorFramework,ScheduleDao scheduleDao){
         this.name = name;
         this.masterPath = path;
+        this.scheduleDao = scheduleDao;
         //选举master
         this.curatorFramework = curatorFramework;
     }
@@ -98,6 +101,8 @@ public class SelectLeader implements LeaderLatchListener {
                 String appName = server.split(WHIPPLETREE)[0];
                 //通过http调用的方式来分发数据
                 httpUtil.sendSchedul(address,METHODPATH,scheduleBean);
+                scheduleDao.insertScheduleByAppName(appName,scheduleBean.getScheduleId());
+
             }
             log.info("初始化分发定时任务完成！");
             //初始化完成后一直保持master不退出

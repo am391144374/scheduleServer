@@ -1,4 +1,4 @@
-package com.l.scheduleserver.quartz;
+package com.l.scheduleserver.services.quartzService;
 
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.SchedulerList;
@@ -6,6 +6,8 @@ import com.l.scheduleserver.enums.container;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import static org.quartz.TriggerBuilder.newTrigger;
 
@@ -13,24 +15,8 @@ import static org.quartz.TriggerBuilder.newTrigger;
  * 执行job任务类
  */
 @Slf4j
+@Component
 public class QuartzExcutors {
-
-    private static QuartzExcutors quartzExcutors;
-
-    private QuartzExcutors(){}
-
-    public static QuartzExcutors getInstance(){
-        if(quartzExcutors == null){
-            synchronized (QuartzExcutors.class){
-                if(quartzExcutors == null){
-                    quartzExcutors = new QuartzExcutors();
-                }else{
-                    return quartzExcutors;
-                }
-            }
-        }
-        return quartzExcutors;
-    }
 
     /**
      * 启动任务

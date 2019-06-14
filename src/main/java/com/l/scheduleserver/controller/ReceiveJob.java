@@ -1,16 +1,12 @@
 package com.l.scheduleserver.controller;
 
 
-import com.l.scheduleserver.ScheduleService.QuartzService;
+import com.l.scheduleserver.services.quartzService.QuartzService;
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
-import com.l.scheduleserver.quartz.QuartzExcutors;
 import lombok.extern.slf4j.Slf4j;
-import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static com.l.scheduleserver.enums.container.*;
 
@@ -26,17 +22,16 @@ public class ReceiveJob {
 
     /**
      * 获取到master发送的job后，先保存不做处理，等待触发任务做处理
-     * @param data
+     * @param id
      */
     @GetMapping(METHODPATH)
-    public void receiveMessage(@RequestParam("data")String data){
-        log.info("新增任务---{}",data);
-        ScheduleBean scheduleBean = WorkerServiceInfo.getWork(data);
+    public void receiveMessage(@RequestParam("data")Integer id){
+        log.info("新增任务---{}",id);
+        ScheduleBean scheduleBean = WorkerServiceInfo.getWork(id);
         if(scheduleBean != null){
             quartzService.addJob(scheduleBean);
         }else{
-            log.warn(data+",未找到对应的定时任务");
+            log.warn(id+",未找到对应的定时任务");
         }
     }
-
 }

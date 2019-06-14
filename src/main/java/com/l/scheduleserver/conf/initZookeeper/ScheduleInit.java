@@ -20,7 +20,6 @@ import java.util.Set;
 public class ScheduleInit {
 
     private String Path = "com.l.scheduleserver";
-    private Set<String> scheduleClassPath = new HashSet<>();
 
     public void scanPacketToGetScheduleBean(){
         log.info("扫描添加定时任务开始！");
@@ -54,7 +53,6 @@ public class ScheduleInit {
                 int lastPackageIndex = filePackagePath.lastIndexOf(packagePath);
                 String lastClassName = filePackagePath.substring(lastPackageIndex).replace(File.separator,".");
                 scanScheduleClass(lastClassName.substring(0,lastClassName.length() - 6));
-                scheduleClassPath.add(lastClassName.substring(0,lastClassName.length() - 6));
             }
         }
     }
@@ -76,7 +74,9 @@ public class ScheduleInit {
                 }
                 ScheduleBean scheduleBean = (ScheduleBean) method.invoke(schClass.newInstance());
                 log.info("扫描----添加定时任务：{}",scheduleBean.getScheduleName());
-                WorkerServiceInfo.putWork(scheduleBean);
+                if(!WorkerServiceInfo.putWork(scheduleBean)){
+                    log.error("存在重复的定时任务ID：{}",scheduleBean.getScheduleId());
+                }
             }
         } catch (ClassNotFoundException e) {
             log.error("ClassNotFoundException----",e);

@@ -1,9 +1,8 @@
-package com.l.scheduleserver.masterService.Listener;
+package com.l.scheduleserver.services.masterService.Listener;
 
 import com.l.scheduleserver.bean.WorkerServiceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.GetChildrenBuilder;
 
 import java.util.List;
 

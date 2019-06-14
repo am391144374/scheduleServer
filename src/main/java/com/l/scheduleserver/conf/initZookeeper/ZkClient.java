@@ -1,8 +1,8 @@
 package com.l.scheduleserver.conf.initZookeeper;
 
-import com.l.scheduleserver.masterService.Listener.GetServiceInfoListener;
-import com.l.scheduleserver.masterService.Listener.PathCacheListener;
-import com.l.scheduleserver.masterService.Listener.SelectLeader;
+import com.l.scheduleserver.services.dao.ScheduleDao;
+import com.l.scheduleserver.services.masterService.Listener.PathCacheListener;
+import com.l.scheduleserver.services.masterService.Listener.SelectLeader;
 import com.l.scheduleserver.util.ThreadUtils;
 import com.l.scheduleserver.util.serverUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +38,8 @@ public class ZkClient implements ApplicationRunner {
     private AtomicInteger atomicInteger = new AtomicInteger();
     @Autowired
     private serverUtil serverUtil;
+    @Autowired
+    private ScheduleDao scheduleDao;
 
     /**
      * 初始化连接
@@ -62,8 +64,6 @@ public class ZkClient implements ApplicationRunner {
         initMasterPathAndWorkerPath();
         //初始化注册当前服务到zookeeper上
         registerService();
-        //初始化service数据
-        initServicListeren();
         //初始化定时任务
         initScheduleWork();
         //竞选master
@@ -184,19 +184,12 @@ public class ZkClient implements ApplicationRunner {
     }
 
     /**
-     * 初始化获取worker节点下的server信息
-     */
-    private void initServicListeren(){
-
-    }
-
-    /**
      * 竞选master
      */
     private void selectMaster(){
         log.info("start run for the master");
         LeaderLatch leaderLatch = new LeaderLatch(curatorFramework, ZK_MASTER_PATH, "client#");
-        SelectLeader selectLeader = new SelectLeader(serverUtil.getApplicationName(),ZK_MASTER_PATH,curatorFramework);
+        SelectLeader selectLeader = new SelectLeader(serverUtil.getApplicationName(),ZK_MASTER_PATH,curatorFramework,scheduleDao);
         leaderLatch.addListener(selectLeader);
         try {
             leaderLatch.start();
@@ -258,7 +251,7 @@ public class ZkClient implements ApplicationRunner {
 
         ThreadFactory threadFactory = ThreadUtils.setThreadFactoryByName("monitor-workerPath-"+workerPath+":");
         PathChildrenCache pathChildrenCache = new PathChildrenCache(curatorFramework,workerPath,true,threadFactory);
-        pathChildrenCache.getListenable().addListener(new PathCacheListener(curatorFramework,localPath));
+        pathChildrenCache.getListenable().addListener(new PathCacheListener(curatorFramework,localPath,scheduleDao));
         try {
             pathChildrenCache.start();
             log.info("启动worker目录监听成功！");

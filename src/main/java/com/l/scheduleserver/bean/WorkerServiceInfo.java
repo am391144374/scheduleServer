@@ -14,16 +14,16 @@ public class WorkerServiceInfo {
     //保存worker子节点的data信息
     public static List<String> serverInfo = new LinkedList<>();
     //该集合只被master使用,用与存储定时任务列表
-    public static ConcurrentHashMap<String,ScheduleBean> workerSchedule = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<Integer,ScheduleBean> workerSchedule = new ConcurrentHashMap<>();
 
-    /**
-     * 读写锁
-     * 实际本程序可以不使用读写锁
-     * 读写锁为后续非数据库并发添加定时任务
-     */
-    private static ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();
-    private static ReadLock readLock = reentrantReadWriteLock.readLock();
-    private static WriteLock writeLock = reentrantReadWriteLock.writeLock();
+//    /**
+//     * 读写锁
+//     * 实际本程序可以不使用读写锁
+//     * 读写锁为后续并发写入数据库
+//     */
+//    private static ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();
+//    private static ReadLock readLock = reentrantReadWriteLock.readLock();
+//    private static WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
     public static String getAllServerInfo(){
         StringBuffer stringBuffer = new StringBuffer();
@@ -36,11 +36,8 @@ public class WorkerServiceInfo {
         return stringBuffer.toString();
     }
 
-    public static ScheduleBean getWork(String scheduleName){
-        if(scheduleName != null){
-            return workerSchedule.get(scheduleName);
-        }
-        return null;
+    public static ScheduleBean getWork(int scheduleId){
+        return workerSchedule.get(scheduleId);
     }
 
     public static void removeServer(String serverData){
@@ -57,7 +54,11 @@ public class WorkerServiceInfo {
 
     public static boolean putWork(ScheduleBean scheduleBean){
         try {
-            workerSchedule.put(scheduleBean.getScheduleName(), scheduleBean);
+            int id = scheduleBean.getScheduleId();
+            if(workerSchedule.containsKey(id)){
+                return false;
+            }
+            workerSchedule.put(id,scheduleBean);
             return true;
         }catch (Exception e){
             return false;

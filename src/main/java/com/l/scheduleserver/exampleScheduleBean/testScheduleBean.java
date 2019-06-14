@@ -14,6 +14,10 @@ import java.util.Date;
 @Schedule
 public class testScheduleBean {
 
+    /**
+     *
+     * @return 需要返回的是一个ScheduleBean的方法
+     */
     @ScheduleGetBeanFromMethod
     public ScheduleBean getScheduleBean(){
         Calendar calendar = Calendar.getInstance();
