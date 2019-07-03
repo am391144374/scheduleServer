@@ -37,10 +37,10 @@
 
 剩余需要完成项：
 
-1.zookeeper的连接配置后续支持：xml格式解析、properties格式解析
+1.zookeeper的连接配置后续支持：properties格式解析
 
-2.引入netty（或者将分发改为rabbitmq的订阅模式，worker自己获取定时任务）
+2.引入netty触发worker执行任务。
 
-3.增加告警提醒：短信提醒、邮件提醒
+3.增加告警提醒：邮件提醒
 
 4.保存已经分配的定时任务，防止在后续master服务宕机或者异常，新的master不需要再次分配定时任务
