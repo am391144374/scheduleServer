@@ -31,7 +31,7 @@ public class WorkerServiceInfo {
             stringBuffer.append(str + container.WHIPPLETREE);
         }
         if(stringBuffer.length() > 0){
-            stringBuffer.substring(0,stringBuffer.length() - 1);
+            stringBuffer.substring(0,stringBuffer.length() - 2);
         }
         return stringBuffer.toString();
     }

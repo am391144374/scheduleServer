@@ -189,7 +189,7 @@ public class ZkClient implements ApplicationRunner {
     private void selectMaster(){
         log.info("start run for the master");
         LeaderLatch leaderLatch = new LeaderLatch(curatorFramework, ZK_MASTER_PATH, "client#");
-        SelectLeader selectLeader = new SelectLeader(serverUtil.getApplicationName(),ZK_MASTER_PATH,curatorFramework,scheduleDao);
+        SelectLeader selectLeader = new SelectLeader(serverUtil.getApplicationName(),ZK_MASTER_PATH,curatorFramework,scheduleDao,serverUtil.getWorkerNum());
         leaderLatch.addListener(selectLeader);
         try {
             leaderLatch.start();

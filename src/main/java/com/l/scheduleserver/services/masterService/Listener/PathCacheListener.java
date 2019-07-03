@@ -1,10 +1,12 @@
 package com.l.scheduleserver.services.masterService.Listener;
 
+import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
 import com.l.scheduleserver.conf.DefaultFail;
 import com.l.scheduleserver.conf.DefaultJobAndFail;
 import com.l.scheduleserver.enums.container;
 import com.l.scheduleserver.services.dao.ScheduleDao;
+import com.l.scheduleserver.util.httpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -12,6 +14,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -52,11 +55,32 @@ public class PathCacheListener extends DefaultFail implements PathChildrenCacheL
                     WorkerServiceInfo.removeServer(serverData);
                     /**
                      * 1.获取故障的worker的所有定时任务的ID
-                     * 2.更具ID获取相应的定时任务
+                     * 2.根据ID获取相应的定时任务
                      * 3.将故障服务的定时任务分配到目前还存在的worker中
                      */
-
                     List<Object> params = scheduleDao.searchAllScheduleIdByAppName(appName);
+                    if(params.size() > 0){
+                        int workSize = WorkerServiceInfo.serverInfo.size();
+                        int idSize = params.size();
+                        int splitNum = 0;
+                        if(workSize > idSize){
+                            splitNum = 1;
+                        }else{
+                            splitNum = idSize / workSize;
+                        }
+                        List<String> childDatas = WorkerServiceInfo.serverInfo;
+                        String server = ((LinkedList<String>) childDatas).poll();
+                        for(int num = 0 ; num < idSize ; num++){
+                            if(num % splitNum == 0){
+                                server = ((LinkedList<String>) childDatas).poll();
+                            }
+                            ScheduleBean scheduleBean = WorkerServiceInfo.getWork((Integer) params.get(num));
+                            //截取出IP地址和应用名，通过调用拼接IP地址来派发定时任务。
+                            String address = server.split(WHIPPLETREE)[1];
+                            //通过http调用的方式来分发数据
+                            httpUtil.sendSchedul(address,METHODPATH,scheduleBean);
+                        }
+                    }
                     scheduleDao.deleteAllByAppName(appName);
 
                 }else{

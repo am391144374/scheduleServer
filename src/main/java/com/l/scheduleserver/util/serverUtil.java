@@ -15,6 +15,8 @@ public class serverUtil {
     private String appName;
     @Value("${ip.address}")
     private String address;
+    @Value("${server.workerNum}")
+    private int workerNum;
 
     public String getHost(){
         return address + ":" + port;
@@ -24,5 +26,8 @@ public class serverUtil {
     }
     public String getUUID(){
         return String.valueOf(UUID.randomUUID());
+    }
+    public int getWorkerNum(){
+        return workerNum;
     }
 }

@@ -32,11 +32,13 @@ public class SelectLeader implements LeaderLatchListener {
     private final CuratorFramework curatorFramework;
     private final String masterPath;
     private ScheduleDao scheduleDao;
+    private int workerNum;
 
-    public SelectLeader(String name, String path, CuratorFramework curatorFramework,ScheduleDao scheduleDao){
+    public SelectLeader(String name, String path, CuratorFramework curatorFramework,ScheduleDao scheduleDao,int workerNum){
         this.name = name;
         this.masterPath = path;
         this.scheduleDao = scheduleDao;
+        this.workerNum = workerNum;
         //选举master
         this.curatorFramework = curatorFramework;
     }
@@ -66,7 +68,7 @@ public class SelectLeader implements LeaderLatchListener {
             }
             log.info("初始化分发定时任务开始！");
             List<String> childDatas = WorkerServiceInfo.serverInfo;
-            while(childDatas.size() < 1){
+            while(childDatas.size() < workerNum){
                 log.info("master没有获取到worker，等待10秒后再次获取！");
                 log.info("当前worker数量：{}",childDatas.size());
                 Thread.sleep(10000);
@@ -92,7 +94,7 @@ public class SelectLeader implements LeaderLatchListener {
             Object[] key = works.keySet().toArray();
             for(int i = 0 ; i < key.length ; i++){
                 ScheduleBean scheduleBean = works.get(key[i]);
-                if(i == splitNum){
+                if(i % splitNum == 0 && i > 0){
                     server = ((LinkedList<String>) childDatas).poll();
                 }
                 //截取出IP地址和应用名，通过调用拼接IP地址来派发定时任务。

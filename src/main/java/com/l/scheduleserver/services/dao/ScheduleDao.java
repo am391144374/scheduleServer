@@ -22,7 +22,6 @@ public class ScheduleDao {
      * @param appName
      * @param value 定时任务ID
      */
-    @Transactional
     public void insertScheduleByAppName(String appName,int value){
         if(!checkIsNotExist(appName,value)){
             redisTemplate.opsForList().rightPush(appName,value);
