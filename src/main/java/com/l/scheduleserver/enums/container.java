@@ -5,7 +5,8 @@ final public class container {
     public static final String ZK_MASTER_PATH = "/server/master";
     public static final String ZK_WORKER_PATH = "/server/worker";
     public static final String ZK_DEAD_PATH = "/server/dead";
-    public static final String ZK_LOCAL_PATH = "/server/lock";
+    public static final String ZK_LOCK_PATH = "/server/lock";
+    public static final String ZK_LOCK_NODE_PATH = "/server/lock/lockNode";
     public static final String WHIPPLETREE = "-";
     //
     public static final String GET_SERVERINFO_HEARTBEAT_NAME = "get server info";
@@ -24,4 +25,6 @@ final public class container {
     public static final int PROCESS_MUTEX_TIME = 10;
 
     public static final String METHODPATH = "/worker/schedule/add";
+
+    public static boolean isMaster = false;
 }

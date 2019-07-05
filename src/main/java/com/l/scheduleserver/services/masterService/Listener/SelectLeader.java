@@ -4,15 +4,18 @@ package com.l.scheduleserver.services.masterService.Listener;
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.SchedulerList;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
+import com.l.scheduleserver.enums.container;
 import com.l.scheduleserver.services.dao.ScheduleDao;
 import com.l.scheduleserver.services.quartzService.QuartzExcutors;
 import com.l.scheduleserver.util.ThreadUtils;
 import com.l.scheduleserver.util.httpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.quartz.Scheduler;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +36,7 @@ public class SelectLeader implements LeaderLatchListener {
     private final String masterPath;
     private ScheduleDao scheduleDao;
     private int workerNum;
+    private ScheduledExecutorService scheduledExecutorService = null;
 
     public SelectLeader(String name, String path, CuratorFramework curatorFramework,ScheduleDao scheduleDao,int workerNum){
         this.name = name;
@@ -47,7 +51,7 @@ public class SelectLeader implements LeaderLatchListener {
      * 注册获取worker信息
      */
     private void setHeartBeatToGetInfo(){
-        ScheduledExecutorService scheduledExecutorService = ThreadUtils.getScheduledExecutorService(GET_SERVERINFO_HEARTBEAT_NAME,GET_SERVERINFO_POOLSIZE);
+        scheduledExecutorService = ThreadUtils.getScheduledExecutorService(GET_SERVERINFO_HEARTBEAT_NAME,GET_SERVERINFO_POOLSIZE);
         scheduledExecutorService.scheduleAtFixedRate(new GetServiceInfoListener(curatorFramework),2,GET_SERVERINFO_TIME, TimeUnit.SECONDS);
         log.info("注册获取信息监听程序成功");
     }
@@ -55,6 +59,8 @@ public class SelectLeader implements LeaderLatchListener {
     @Override
     public void isLeader() {
         log.info("当前{}成为leader",name);
+        isMaster = true;
+        //当成为leader时才会启动监听
         setHeartBeatToGetInfo();
         try{
             String MasterPath = masterPath + "/" + name;
@@ -69,9 +75,9 @@ public class SelectLeader implements LeaderLatchListener {
             log.info("初始化分发定时任务开始！");
             List<String> childDatas = WorkerServiceInfo.serverInfo;
             while(childDatas.size() < workerNum){
-                log.info("master没有获取到worker，等待10秒后再次获取！");
+                log.info("master没有获取到worker，等待5秒后再次获取！");
                 log.info("当前worker数量：{}",childDatas.size());
-                Thread.sleep(10000);
+                Thread.sleep(5000);
                 childDatas = WorkerServiceInfo.serverInfo;
             }
 
@@ -82,9 +88,9 @@ public class SelectLeader implements LeaderLatchListener {
             ConcurrentHashMap<String,ScheduleBean> works = WorkerServiceInfo.getWorks();
             while(workSize == -1 || works == null){
                 //每10秒查询一次
-                log.info("未查找到worker子节点！10秒后再次获取！");
+                log.info("未查找到worker子节点！5秒后再次获取！");
                 log.info("当前worker任务的数量：{}",workSize);
-                Thread.sleep(10000);
+                Thread.sleep(5000);
                 works =  WorkerServiceInfo.getWorks();
                 workSize = WorkerServiceInfo.getWorksSize();
             };
@@ -107,14 +113,14 @@ public class SelectLeader implements LeaderLatchListener {
 
             }
             log.info("初始化分发定时任务完成！");
-            //初始化完成后一直保持master不退出
-            while(true){
-                Thread.sleep(Integer.MAX_VALUE);
-            }
         }catch ( InterruptedException e ){
             log.error(name + " was interrupted.");
             Thread.currentThread().interrupt();
+            shutdownListeren();
+            isMaster = false;
         }catch (Exception e){
+            shutdownListeren();
+            isMaster = false;
             e.printStackTrace();
         }finally{
             log.info("竞选完成-放弃leader");
@@ -124,6 +130,7 @@ public class SelectLeader implements LeaderLatchListener {
     @Override
     public void notLeader() {
         log.info("当前{}未成为master",name);
+        isMaster = false;
     }
 
     public void isLeaderThenDeleteWorkerInfo(){
@@ -134,5 +141,12 @@ public class SelectLeader implements LeaderLatchListener {
             }
         }
         WorkerServiceInfo.serverInfo.clear();
+    }
+
+    //出现错误或者其他原因放弃leader则关闭监听
+    private void shutdownListeren(){
+        if(scheduledExecutorService != null){
+            scheduledExecutorService.shutdownNow();
+        }
     }
 }

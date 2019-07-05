@@ -31,9 +31,7 @@ public class GetServiceInfoListener implements Runnable{
                 byte[] data = curatorFramework.getData().forPath(ZK_WORKER_PATH +SPRITE + ob);
                 WorkerServiceInfo.serverInfo.add(new String(data));
             }
-            if(serviceInfos.size() > 0){
-                log.info("重新获取后，当前的所有worker信息,serviceInfo={}",WorkerServiceInfo.getAllServerInfo());
-            }else {
+            if(serviceInfos.size() <= 0){
                 log.info("重新获取后，未发现worker信息");
             }
 

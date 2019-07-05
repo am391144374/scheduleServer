@@ -20,9 +20,11 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,6 +38,7 @@ public class ZkClient implements ApplicationRunner {
     private CuratorFramework curatorFramework ;
     private AbstractInitParam abstractInitParam;
     private AtomicInteger atomicInteger = new AtomicInteger();
+    private LeaderLatch leaderLatch = null;
     @Autowired
     private serverUtil serverUtil;
     @Autowired
@@ -66,10 +69,10 @@ public class ZkClient implements ApplicationRunner {
         registerService();
         //初始化定时任务
         initScheduleWork();
-        //竞选master
-        selectMaster();
         //注册监听节点
         regiestNodePath();
+        //竞选master
+        selectMaster();
     }
 
     /**
@@ -89,10 +92,13 @@ public class ZkClient implements ApplicationRunner {
      * close connection
      */
     @PreDestroy
-    public void stopCuratorFramework(){
+    public void stopCuratorFramework() throws IOException {
         log.info("停止zookeeperClient");
         curatorFramework.getZookeeperClient().close();
-        curatorFramework.close();
+        if(leaderLatch != null){
+            leaderLatch.close();
+        }
+        //        curatorFramework.close();
     }
 
     private void initConnection(){
@@ -188,21 +194,29 @@ public class ZkClient implements ApplicationRunner {
      */
     private void selectMaster(){
         log.info("start run for the master");
-        LeaderLatch leaderLatch = new LeaderLatch(curatorFramework, ZK_MASTER_PATH, "client#");
+        leaderLatch = new LeaderLatch(curatorFramework, ZK_MASTER_PATH, "client#");
         SelectLeader selectLeader = new SelectLeader(serverUtil.getApplicationName(),ZK_MASTER_PATH,curatorFramework,scheduleDao,serverUtil.getWorkerNum());
         leaderLatch.addListener(selectLeader);
         try {
             leaderLatch.start();
         } catch (Exception e) {
-            e.printStackTrace();
+            try {
+                leaderLatch.close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+            log.error(e.getMessage());
         }
-//        selectLeader.start();
     }
 
     //程序初始化错误，直接停止程序
     private void shutdownNow(){
         log.error("初始化错误，退出程序！");
-        stopCuratorFramework();
+        try {
+            stopCuratorFramework();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.exit(0);
     }
 
@@ -247,11 +261,10 @@ public class ZkClient implements ApplicationRunner {
      */
     public void regiestNodePath(){
         String workerPath = ZK_WORKER_PATH;
-        String localPath = ZK_LOCAL_PATH;
-
+        String lockPath = ZK_LOCK_PATH;
         ThreadFactory threadFactory = ThreadUtils.setThreadFactoryByName("monitor-workerPath-"+workerPath+":");
         PathChildrenCache pathChildrenCache = new PathChildrenCache(curatorFramework,workerPath,true,threadFactory);
-        pathChildrenCache.getListenable().addListener(new PathCacheListener(curatorFramework,localPath,scheduleDao));
+        pathChildrenCache.getListenable().addListener(new PathCacheListener(lockPath,scheduleDao));
         try {
             pathChildrenCache.start();
             log.info("启动worker目录监听成功！");

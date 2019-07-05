@@ -31,7 +31,7 @@ public class WorkerServiceInfo {
             stringBuffer.append(str + container.WHIPPLETREE);
         }
         if(stringBuffer.length() > 0){
-            stringBuffer.substring(0,stringBuffer.length() - 2);
+            return stringBuffer.substring(0,stringBuffer.length() - 1);
         }
         return stringBuffer.toString();
     }
@@ -40,8 +40,8 @@ public class WorkerServiceInfo {
         return workerSchedule.get(scheduleId);
     }
 
-    public static void removeServer(String serverData){
-        serverInfo.remove(serverData);
+    public static boolean removeServer(String serverData){
+        return serverInfo.remove(serverData);
     }
 
     public static ConcurrentHashMap getWorks(){

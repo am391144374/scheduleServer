@@ -2,8 +2,6 @@ package com.l.scheduleserver.services.masterService.Listener;
 
 import com.l.scheduleserver.bean.ScheduleBean;
 import com.l.scheduleserver.bean.WorkerServiceInfo;
-import com.l.scheduleserver.conf.DefaultFail;
-import com.l.scheduleserver.conf.DefaultJobAndFail;
 import com.l.scheduleserver.enums.container;
 import com.l.scheduleserver.services.dao.ScheduleDao;
 import com.l.scheduleserver.util.httpUtil;
@@ -22,13 +20,13 @@ import static com.l.scheduleserver.enums.container.*;
 import static org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type.*;
 
 @Slf4j
-public class PathCacheListener extends DefaultFail implements PathChildrenCacheListener {
+public class PathCacheListener implements PathChildrenCacheListener {
 
-    private InterProcessMutex interProcessMutex;
     private ScheduleDao scheduleDao;
+    private String lockPath;
 
-    public PathCacheListener(CuratorFramework curatorFramework, String lockPath, ScheduleDao scheduleDao){
-        this.interProcessMutex = new InterProcessMutex(curatorFramework,lockPath);
+    public PathCacheListener(String lockPath, ScheduleDao scheduleDao){
+        this.lockPath = lockPath;
         this.scheduleDao = scheduleDao;
     }
 
@@ -40,6 +38,11 @@ public class PathCacheListener extends DefaultFail implements PathChildrenCacheL
      */
     @Override
     public void childEvent(CuratorFramework curatorFramework, PathChildrenCacheEvent pathChildrenCacheEvent){
+        if(!isMaster){
+            log.info("非master不做监听处理");
+            return;
+        }
+        InterProcessMutex interProcessMutex = new InterProcessMutex(curatorFramework,lockPath);
         PathChildrenCacheEvent.Type cacheType = pathChildrenCacheEvent.getType();
         ChildData childData = pathChildrenCacheEvent.getData();
         if(cacheType.equals(CHILD_ADDED)){
@@ -47,47 +50,62 @@ public class PathCacheListener extends DefaultFail implements PathChildrenCacheL
             WorkerServiceInfo.serverInfo.add(new String(childData.getData()));
         }else if(cacheType.equals(CHILD_REMOVED)){
             try {
-                if(interProcessMutex.acquire(container.PROCESS_MUTEX_TIME,TimeUnit.SECONDS)){
+                interProcessMutex.acquire(container.PROCESS_MUTEX_TIME,TimeUnit.SECONDS);
+                if(!interProcessMutex.isAcquiredInThisProcess()){
+                    log.error("当前服务无法持有锁,不做操作");
+                    return;
+                }
+                if(!interProcessMutex.isOwnedByCurrentThread()){
+                    return;
+                }else{
                     //更新节点信息
                     String serverData = childData.getPath();
-                    String data = String.valueOf(childData.getData());
+                    String data = new String(childData.getData());
                     String appName = data.split(WHIPPLETREE)[0];
-                    WorkerServiceInfo.removeServer(serverData);
+                    log.info("删除节点信息------{}",serverData);
+                    if(!WorkerServiceInfo.removeServer(data)){
+                        log.error("删除节点失败-------{}",serverData);
+                        return;
+                    }
                     /**
-                     * 1.获取故障的worker的所有定时任务的ID
+                     * 1.从redis中获取故障的服务已经派发的所有任务
                      * 2.根据ID获取相应的定时任务
                      * 3.将故障服务的定时任务分配到目前还存在的worker中
                      */
-                    List<Object> params = scheduleDao.searchAllScheduleIdByAppName(appName);
-                    if(params.size() > 0){
-                        int workSize = WorkerServiceInfo.serverInfo.size();
-                        int idSize = params.size();
-                        int splitNum = 0;
-                        if(workSize > idSize){
-                            splitNum = 1;
-                        }else{
-                            splitNum = idSize / workSize;
-                        }
+                    long paramSize = scheduleDao.searchSizeByAppName(appName);
+                    if(paramSize == 0){
+                        log.info("{}未配置相关任务",appName);
+                        return;
+                    }
+                    if(paramSize > 0){
                         List<String> childDatas = WorkerServiceInfo.serverInfo;
+                        while(childDatas.size() <= 0){
+                            log.info("没有在活动的主机等待5秒再判断");
+                            childDatas = WorkerServiceInfo.serverInfo;
+                            Thread.sleep(5000);
+                        }
+                        long splitNum = (paramSize / childDatas.size()) + (paramSize % childDatas.size());
                         String server = ((LinkedList<String>) childDatas).poll();
-                        for(int num = 0 ; num < idSize ; num++){
-                            if(num % splitNum == 0){
+                        for(int num = 0 ; num < paramSize ; num++){
+                            if(num % splitNum == 0 && num > 0){
                                 server = ((LinkedList<String>) childDatas).poll();
                             }
-                            ScheduleBean scheduleBean = WorkerServiceInfo.getWork((Integer) params.get(num));
+                            Object schId = null;
+                            if((schId = scheduleDao.rpopByAppName(appName)) == null){
+                                break;
+                            }
+                            ScheduleBean scheduleBean = WorkerServiceInfo.getWork((Integer) schId);
                             //截取出IP地址和应用名，通过调用拼接IP地址来派发定时任务。
                             String address = server.split(WHIPPLETREE)[1];
+                            String newAppName = server.split(WHIPPLETREE)[0];
                             //通过http调用的方式来分发数据
                             httpUtil.sendSchedul(address,METHODPATH,scheduleBean);
+                            scheduleDao.insertScheduleByAppName(newAppName,scheduleBean.getScheduleId());
                         }
                     }
-                    scheduleDao.deleteAllByAppName(appName);
-
-                }else{
-                    //其他进程在做相同的事情。
-                    log.error("当前主机无法获取锁，不做其他处理！");
                 }
             }catch (Exception e){
+                e.printStackTrace();
                 log.error("处理删除节点错误：{}",e.getMessage());
             }finally {
                 //释放分布式锁

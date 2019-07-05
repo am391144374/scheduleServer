@@ -6,9 +6,9 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
@@ -55,7 +55,7 @@ public class ScheduleDao {
      * @param appName
      * @return
      */
-    private Long searchSizeByAppName(String appName){
+    public long searchSizeByAppName(String appName){
         return redisTemplate.opsForList().size(appName);
     }
 
@@ -76,9 +76,8 @@ public class ScheduleDao {
      * 当一个worker故障时，删除所有的关于其的定时任务
      * @param appName
      */
-    @Transactional
-    public void deleteAllByAppName(String appName){
-        redisTemplate.opsForList().remove(appName,0,serchLastScheduleIdByAppName(appName));
+    public Object rpopByAppName(String appName){
+        return redisTemplate.opsForList().rightPop(appName,3, TimeUnit.SECONDS);
     }
 
     /**
@@ -106,5 +105,4 @@ public class ScheduleDao {
             return false;
         }
     }
-
 }

@@ -3,9 +3,7 @@ package com.l.scheduleserver.util;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 public class ThreadUtils {
 
@@ -18,6 +16,10 @@ public class ThreadUtils {
     public static ScheduledExecutorService getScheduledExecutorService(String threadName,int poolSize){
         ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(poolSize,setThreadFactoryByName(threadName));
         return scheduledExecutorService;
+    }
+
+    public static ExecutorService getSingleThread(String threadName){
+        return Executors.newSingleThreadExecutor(setThreadFactoryByName(threadName));
     }
 
     /**

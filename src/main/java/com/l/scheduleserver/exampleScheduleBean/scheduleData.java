@@ -14,7 +14,6 @@ public class scheduleData extends DefaultJobAndFail {
             log.info("{},定时任务开始执行",jobDataMap.get("desc"));
             JobKey jobKey = jobExecutionContext.getTrigger().getJobKey();
             log.info("执行{},完成！",jobKey.getName());
-            fail();
         }catch (Exception e){
             e.printStackTrace();
             fail();
